@@ -15,35 +15,26 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.client.SendObject;
-import com.example.com.mahjong_helpv1.ImageProcessing.Gray;
-import com.example.com.mahjong_helpv1.ImageProcessing.Sobel;
-
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -51,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public static final int CROP_PHOTO = 2;
     private Button takePhoto;
     private Button deliver;
+    private Button button;
     private ImageView picture;
     private Uri imageUri;
     private Bitmap bitmap;
@@ -58,18 +50,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView textView;
     private EditText editText;
     public static final int REQUEST_PICKER_AND_CROP=5;
-
+    private TextView pleaseTakePicture;
+    private String num;
+    private ArrayList<String> listen = new ArrayList<>() ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         takePhoto = (Button) findViewById(R.id.take_photo);
-        deliver = (Button) findViewById(R.id.button);
+        deliver = (Button) findViewById(R.id.deliver);
+        pleaseTakePicture = (TextView)findViewById(R.id.pleaseTakePicture);
         picture = (ImageView) findViewById(R.id.picture);
         takePhoto.setOnClickListener(this);
         deliver.setOnClickListener(this);
-        textView = (TextView) findViewById(R.id.textView);
-        editText = (EditText) findViewById(R.id.editText);
+
+
+        Intent reIntentObj = getIntent(); /* 取得傳入的 Intent 物件 */
+        Bundle bundle = reIntentObj.getExtras();
+
+        if (bundle != null && bundle.containsKey("num") ){
+            num = bundle.getString("num");
+
+        }
     }
 
     @Override
@@ -78,8 +80,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.take_photo:
                 openCamera(this);
                 break;
-            case R.id.button:
-                new Thread(runnable).start();
+            case R.id.deliver:
+                deliver.setEnabled(false);
+                Thread a =  new Thread(runnable);
+                a.start();
+                try {
+                    a.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Intent intent = new Intent();
+                intent.setClass(MainActivity.this,OuptutActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putStringArrayList("listen", listen);
+                intent.putExtras(bundle);   // 記得put進去，不然資料不會帶過去哦
+                startActivity(intent);
 
         }
     }
@@ -87,12 +102,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Runnable runnable = (new Runnable() {
         @Override
         public void run() {
-            connect();
+            try {
+                connect();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     });
 
 
-    private void connect() {
+    private void connect() throws ClassNotFoundException {
         Socket socket;
         try {
             socket = new Socket("140.124.181.168", 40000);
@@ -100,16 +119,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //读取图片到ByteArrayOutputStream
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
             byte[] bytes = baos.toByteArray();
-            SendObject sendObject = new SendObject(bytes, editText.getText().toString());
-
+            SendObject sendObject = new SendObject(bytes, num);
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             out.writeObject(sendObject);
             //傳完圖片
-
             out.flush();
-            out.close();
-            socket.close();
 
+            ObjectInputStream in = new java.io.ObjectInputStream(socket.getInputStream());
+            SendObject data2=(SendObject) in.readObject();
+
+            in.close();
+            socket.close();
+            listen =data2.listenCard;
 
         } catch (UnknownHostException e) {
             e.printStackTrace();
@@ -119,52 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    //load opencv
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i("OpenCV", "OpenCV loaded successfully");
-                    Mat imageMat = new Mat();
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
 
-    //load opencv
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_10, this, mLoaderCallback);
-        } else {
-            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-        }
-    }
-
-    public Intent startPhotoZoom(Bitmap bitmap) {
-        Intent intent = new Intent("com.android.camera.action.CROP");
-        intent.setType("image/*");
-        // 设置裁剪
-        intent.putExtra("data", bitmap);
-        intent.putExtra("crop", "true");
-        // aspectX aspectY 是宽高的比例
-        intent.putExtra("aspectX", 1);
-        intent.putExtra("aspectY", 10);
-        // outputX outputY 是裁剪图片宽高
-        intent.putExtra("outputX", 100);
-        intent.putExtra("outputY", 340);
-        intent.putExtra("return-data", true);
-        return intent;
-    }
 
 
     private void getImageToView(Intent data) {
@@ -183,16 +159,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             switch (requestCode) {
                 case PHOTO_REQUEST_CAREMA:
                     if (resultCode == RESULT_OK) {
+
                         Intent intent = new Intent("com.android.camera.action.CROP");
                         intent.setDataAndType(imageUri, "image/*");
                         intent.putExtra("scale", true);
                         Uri uri = imageUri;
                         intent.setDataAndType(uri, "image/*");
                         //intent.putExtra("crop", "true");
-                        intent.putExtra("aspectX", 5);
-                        intent.putExtra("aspectY", 1);
-                        intent.putExtra("outputX", 300);
-                        intent.putExtra("outputY", 100);
+                        intent.putExtra("aspectX", 7);
+                        intent.putExtra("aspectY", 0.9);
+                        intent.putExtra("outputX", 437* Integer.parseInt(num));
+                        intent.putExtra("outputY", 1000);
                         intent.putExtra("scale", true);
                         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                         intent.putExtra("return-data", false);
@@ -200,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         intent.putExtra("noFaceDetection", true); // no face detection
                         intent = Intent.createChooser(intent, "裁剪图片");
                         startActivityForResult(intent, REQUEST_PICKER_AND_CROP);
+                        pleaseTakePicture.setText("");
                         //bitmap=Gray.getGrayImage(bitmap);
                         //bitmap=Sobel.doSobel(bitmap);
                     }

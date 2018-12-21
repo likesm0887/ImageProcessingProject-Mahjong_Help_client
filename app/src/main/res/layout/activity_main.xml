@@ -1,55 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="center_horizontal|center_vertical" >
 
 
     <Button
-        android:id="@+id/take_photo"
-        android:layout_width="match_parent"
+        android:id="@+id/deliver"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Take Photo"/>
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="236dp"
+        android:layout_marginEnd="17dp"
+        android:layout_marginBottom="28dp"
+        android:background="@android:color/holo_blue_dark"
+        android:gravity="center"
+        android:paddingLeft="30dp"
+
+        android:paddingRight="30dp"
+        android:text="deliver"
+        android:textColor="#ffffffff"
+        android:textSize="12sp" />
 
     <Button
-        android:id="@+id/button"
-        android:layout_width="121dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="131dp"
-        android:layout_marginBottom="19dp"
-        android:text="deliver" />
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="64dp"
-        android:layout_height="74dp"
-        android:layout_above="@+id/button"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="154dp"
-        android:layout_marginBottom="45dp"
-        android:text="textView" />
-
-    <EditText
-        android:id="@+id/editText"
-        android:layout_width="85dp"
-        android:layout_height="68dp"
+        android:id="@+id/take_photo"
+        android:layout_width="wrap_content"
+        android:layout_height="71dp"
         android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="21dp"
-        android:layout_marginBottom="34dp"
-        android:ems="10"
-        android:inputType="number" />
+        android:layout_marginStart="53dp"
+        android:layout_marginTop="421dp"
+        android:layout_marginBottom="19dp"
+        android:background="@drawable/icons8_screenshot_96" />
 
     <ImageView
         android:id="@+id/picture"
-        android:layout_width="192dp"
-        android:layout_height="139dp"
+        android:layout_width="339dp"
+        android:layout_height="120dp"
         android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="162dp" />
+        android:layout_marginTop="77dp"
+        android:layout_marginBottom="314dp" />
+
+    <TextView
+        android:id="@+id/pleaseTakePicture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="247dp"
+        android:text="請拍攝照片" />
 
 
 </RelativeLayout>
