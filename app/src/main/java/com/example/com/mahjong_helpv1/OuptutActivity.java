@@ -73,7 +73,7 @@ public class OuptutActivity extends AppCompatActivity  implements View.OnClickLi
         if (card == "BAI") {
             return "白";
         }
-        return "";8
+        return "";
     }
     @Override
     public void onClick(View v) {
